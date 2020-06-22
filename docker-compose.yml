@@ -36,7 +36,7 @@ services:
     command:
       [
         "/app/wait-for-it.sh",
-        "authentication-service",
+        "authentication-service:80",
         "--",
         "nginx",
         "-g",
