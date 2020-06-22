@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  cache:
+    container_name: "cache"
+    image: "redis:latest"
+    expose:
+      - "6379"
+  authentication-service:
+    container_name: "authentication-service"
+    build:
+      - context: "./authentication-service"
+      - dockerfile: "Dockerfile"
+    volumes:
+      - ".:/app"
+      - "/app/authentication-service/node_modules"
+    depends_on:
+      - "cache"
+    command: ["/app/wait-for-it.sh", "cache:6379", "--", "npm", "run", "dev"]
+    environment:
+      - "NODE_ENV=development"
+      - "AUTH_DOMAIN=${AUTH_DOMAIN}"
+      - "AUTH_AUDIENCE=${AUTH_AUDIENCE}"
+      - "PORT=80"
+    expose:
+      - "80"
