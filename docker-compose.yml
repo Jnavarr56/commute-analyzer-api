@@ -8,8 +8,8 @@ services:
   authentication-service:
     container_name: "authentication-service"
     build:
-      - context: "./authentication-service"
-      - dockerfile: "Dockerfile"
+      context: "./authentication-service"
+      dockerfile: "Dockerfile"
     volumes:
       - ".:/app"
       - "/app/authentication-service/node_modules"
@@ -18,8 +18,30 @@ services:
     command: ["/app/wait-for-it.sh", "cache:6379", "--", "npm", "run", "dev"]
     environment:
       - "NODE_ENV=development"
+      - "PATHNAME_PREFIX=/authentication"
       - "AUTH_DOMAIN=${AUTH_DOMAIN}"
       - "AUTH_AUDIENCE=${AUTH_AUDIENCE}"
       - "PORT=80"
     expose:
       - "80"
+  nginx-routing-server:
+    container_name: "nginx-routing-server"
+    build:
+      context: "./nginx-routing-server"
+      dockerfile: "Dockerfile"
+    volumes:
+      - ".:/app"
+    depends_on:
+      - "authentication-service"
+    command:
+      [
+        "/app/wait-for-it.sh",
+        "authentication-service",
+        "--",
+        "nginx",
+        "-g",
+        "daemon off;",
+      ]
+    ports:
+      - "8080:80"
+# daemon on in production
