@@ -24,8 +24,8 @@ services:
       - "PORT=80"
     expose:
       - "80"
-  nginx-routing-server:
-    container_name: "nginx-routing-server"
+  routing-server:
+    container_name: "routing-server"
     build:
       context: "./nginx-routing-server"
       dockerfile: "Dockerfile"
