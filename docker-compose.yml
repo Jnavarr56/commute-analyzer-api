@@ -24,39 +24,35 @@ services:
       - "PORT=80"
     expose:
       - "80"
-  # places-service:
-  #   container_name: "places-service"
-  #   build:
-  #     context: "./places-service"
-  #     dockerfile: "Dockerfile"
-  #   volumes:
-  #     - ".:/app"
-  #     - "/app/authentication-service/node_modules"
-  #   depends_on:
-  #     - "cache"
-  #   command: ["/app/wait-for-it.sh", "cache:6379", "--", "npm", "run", "dev"]
-  #   environment:
-  #     - "NODE_ENV=development"
-  #     - "PATHNAME_PREFIX=/authentication"
-  #     - "AUTH_DOMAIN=${AUTH_DOMAIN}"
-  #     - "AUTH_AUDIENCE=${AUTH_AUDIENCE}"
-  #     - "PORT=80"
-  #   expose:
-  #     - "80"
-
+  places-service:
+    container_name: "places-service"
+    build:
+      context: "./places-service"
+      dockerfile: "Dockerfile"
+    volumes:
+      - "./wait-for-it.sh:/app/wait-for-it.sh"
+    depends_on:
+      - "cache"
+    command: bash -c "rm -f tmp/pids/server.pid && /app/wait-for-it.sh authentication-service:80 -- bundle exec rails s -p 80 -b '0.0.0.0'"
+    environment:
+      - "RAILS_ENV=development"
+      - "MONGO_DB_URL=${MONGO_DB_URL}"
+      - "AUTHENTICATION_API_URL=http://authentication-service/authentication/verify"
+    expose:
+      - "80"
   routing-server:
     container_name: "routing-server"
     build:
       context: "./nginx-routing-server"
       dockerfile: "Dockerfile"
     volumes:
-      - ".:/app"
+      - "./wait-for-it.sh:/app/wait-for-it.sh"
     depends_on:
       - "authentication-service"
     command:
       [
         "/app/wait-for-it.sh",
-        "authentication-service:80",
+        "places-service:80",
         "--",
         "nginx",
         "-g",

@@ -4,3 +4,6 @@
 [submodule "nginx-routing-server"]
 	path = nginx-routing-server
 	url = git@github.com:Jnavarr56/commute-analyzer-nginx-routing-server.git
+[submodule "places-service"]
+	path = places-service
+	url = git@github.com:Jnavarr56/commute-analyzer-places-service.git
