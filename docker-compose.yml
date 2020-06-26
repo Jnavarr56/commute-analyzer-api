@@ -11,17 +11,17 @@ services:
       context: "./authentication-service"
       dockerfile: "Dockerfile"
     volumes:
-      - ".:/app"
-      - "/app/authentication-service/node_modules"
+      - "./authentication-service:/app"
+      - "/app/node_modules"
     depends_on:
       - "cache"
-    command: ["/app/wait-for-it.sh", "cache:6379", "--", "npm", "run", "dev"]
+    command: bash -c "/wait && PORT=80 npm run dev"
     environment:
       - "NODE_ENV=development"
       - "PATHNAME_PREFIX=/authentication"
       - "AUTH_DOMAIN=${AUTH_DOMAIN}"
       - "AUTH_AUDIENCE=${AUTH_AUDIENCE}"
-      - "PORT=80"
+      - "WAIT_HOSTS=cache:6379"
     expose:
       - "80"
   places-service:
@@ -30,15 +30,16 @@ services:
       context: "./places-service"
       dockerfile: "Dockerfile"
     volumes:
-      - "./wait-for-it.sh:/app/wait-for-it.sh"
+      - "./places-service:/app"
     depends_on:
       - "cache"
-    command: bash -c "rm -f tmp/pids/server.pid && /app/wait-for-it.sh authentication-service:80 -- bundle exec rails s -p 80 -b '0.0.0.0'"
+    command: bash -c "rm -f tmp/pids/server.pid && /wait && bundle exec rails s -p 80 -b '0.0.0.0'"
     environment:
       - "RAILS_ENV=development"
       - "PATHNAME_PREFIX=/places"
       - "MONGO_DB_URL=${MONGO_DB_URL}"
-      - "AUTHENTICATION_API_URL=http://routing-server/authentication/verify"
+      - "AUTHENTICATION_API_URL=http://authentication-service/authentication/verify"
+      - "WAIT_HOSTS=authentication-service:80"
     expose:
       - "80"
   routing-server:
@@ -46,19 +47,11 @@ services:
     build:
       context: "./nginx-routing-server"
       dockerfile: "Dockerfile"
-    volumes:
-      - "./wait-for-it.sh:/app/wait-for-it.sh"
     depends_on:
       - "places-service"
-    command:
-      [
-        "/app/wait-for-it.sh",
-        "places-service:80",
-        "--",
-        "nginx",
-        "-g",
-        "daemon off;",
-      ]
+    command: bash -c "/wait && nginx -g 'daemon off;'"
+    environment:
+      - "WAIT_HOSTS=authentication-service:80"
     ports:
       - "8080:80"
 # daemon on in production
